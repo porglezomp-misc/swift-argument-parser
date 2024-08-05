@@ -262,3 +262,25 @@ extension NestedCommandEndToEndTests {
     }
   }
 }
+
+// MARK: Arguments at multiple layers
+private struct OuterArgCommand: ParsableCommand {
+  static let configuration = CommandConfiguration(subcommands: [InnerArgCommand.self])
+
+  @Argument() var argument: String
+
+  struct InnerArgCommand: ParsableCommand {
+    @OptionGroup() var outer: OuterArgCommand
+
+    @Argument() var argument: String
+  }
+}
+
+extension NestedCommandEndToEndTests {
+  func testParsing_multipleLayersArgs() throws {
+    AssertParseCommand(OuterArgCommand.self, OuterArgCommand.InnerArgCommand.self, ["outer", "inner-arg-command", "inner"]) { inner in
+      XCTAssertEqual(inner.outer.argument, "outer")
+      XCTAssertEqual(inner.argument, "inner")
+    }
+  }
+}
